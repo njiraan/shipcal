@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ShipCalc — Shipping & Profit Calculator</title>
+  
+  <!-- SEO & Social Meta Tags -->
+  <meta name="description" content="Premium Shipping and Profit Calculator app. Calculate Sea Shipping CBM, Air Shipping costs, and profit margins on the go.">
+  <meta name="theme-color" content="#FF7F6A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  
+  <style>
+    /* Design Tokens & CSS Variables */
+    :root {
+      --color-cream: #FFF7F1;
+      --color-coral: #FF7F6A;
+      --color-espresso: #3B2521;
+      --color-rose: #B67C8A;
+      --color-gold: #D6A56F;
+      
+      --color-white: #FFFFFF;
+      --color-shadow: rgba(59, 37, 33, 0.08);
+      --color-shadow-hover: rgba(59, 37, 33, 0.14);
+      --color-border: rgba(59, 37, 33, 0.1);
+      
+      --color-green: #2ECC71;
+      --color-yellow: #F1C40F;
+      --color-red: #E74C3C;
+      
+      --font-display: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 30px;
+      
+      --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-spring: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    /* Global Reset & Base Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      background-color: var(--color-cream);
+      color: var(--color-espresso);
+      font-family: var(--font-body);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+    
+    /* Shell / Container Structure */
+    .app-shell {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background-color: var(--color-cream);
+      box-shadow: 0 0 40px rgba(59, 37, 33, 0.04);
+      padding-bottom: 96px; /* Nav bar space */
+    }
+    
+    /* Header Styles */
+    header {
+      background-color: var(--color-white);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--color-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .brand svg {
+      width: 32px;
+      height: 32px;
+      fill: none;
+    }
+    
+    .brand h1 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--color-espresso);
+      letter-spacing: -0.5px;
+    }
+    
+    .brand h1 span {
+      color: var(--color-coral);
+    }
+    
+    .pwa-install-btn {
+      background-color: var(--color-cream);
+      color: var(--color-coral);
+      border: 1px solid rgba(255, 127, 106, 0.2);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: none; /* Shown dynamically via JS */
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition-smooth);
+    }
+    
+    .pwa-install-btn:hover {
+      background-color: var(--color-coral);
+      color: var(--color-white);
+    }
+    
+    /* Main Screen Toggles Container */
+    main {
+      flex: 1;
+      padding: 24px 20px;
+      position: relative;
+    }
+    
+    /* Screen transition states */
+    .screen {
+      display: none;
+      opacity: 0;
+      transform: translateY(15px);
+      transition: var(--transition-spring);
+    }
+    
+    .screen.active {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    /* Card Styles */
+    .card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: 0 10px 25px var(--color-shadow);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card-title-group {
+      margin-bottom: 20px;
+    }
+    
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--color-espresso);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .card-subtitle {
+      font-size: 0.85rem;
+      color: var(--color-rose);
+      margin-top: 4px;
+    }
+    
+    /* Custom Styled Inputs & Forms */
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-espresso);
+      margin-bottom: 8px;
+      opacity: 0.9;
+    }
+    
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background-color: var(--color-cream);
+      border: 1.5px solid transparent;
+      border-radius: var(--radius-md);
+      transition: var(--transition-smooth);
+      padding: 0 16px;
+    }
+    
+    .input-wrapper:focus-within {
+      border-color: var(--color-coral);
+      background-color: var(--color-white);
+      box-shadow: 0 0 0 4px rgba(255, 127, 106, 0.1);
+    }
+    
+    .input-wrapper.error {
+      border-color: var(--color-rose);
+      background-color: rgba(182, 124, 138, 0.05);
+    }
+    
+    .input-wrapper.error:focus-within {
+      box-shadow: 0 0 0 4px rgba(182, 124, 138, 0.15);
+    }
+    
+    .input-icon {
+      font-weight: 600;
+      color: var(--color-rose);
+      margin-right: 8px;
+      font-size: 1rem;
+    }
+    
+    .form-control {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 14px 0;
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--color-espresso);
+      font-weight: 600;
+      outline: none;
+    }
+    
+    .form-control::placeholder {
+      color: var(--color-rose);
+      opacity: 0.5;
+      font-weight: 400;
+    }
+    
+    /* Dropdown inside input */
+    .unit-selector {
+      border: none;
+      background-color: var(--color-white);
+      color: var(--color-espresso);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      margin-left: 8px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px var(--color-shadow);
+      outline: none;
+      transition: var(--transition-smooth);
+      flex-shrink: 0;
+    }
+    
+    .unit-selector:focus {
+      background-color: var(--color-coral);
+      color: var(--color-white);
+    }
+
+    /* Enlarged dimension input fields (L/W/H on Sea Freight) */
+        .dim-wrapper {
+      padding: 0 16px;
+      min-height: 60px;
+    }
+
+        .dim-control {
+      font-size: 1.5rem !important;
+      font-weight: 700 !important;
+      padding: 22px 0 !important;
+      color: var(--color-espresso) !important;
+      min-width: 0;
+    }
+
+    .dim-control::placeholder {
+      font-size: 1rem;
+      font-weight: 400;
+      opacity: 0.45;
+    }
+    
+    /* Error indicator text */
+    .error-text {
+      color: var(--color-rose);
+      font-size: 0.75rem;
+      font-weight: 500;
+      margin-top: 4px;
+      display: none;
+    }
+    
+    /* Horizontal Multi-Input Row */
+    .input-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    
+    /* Styled Submit Button */
+    .btn-calculate {
+      width: 100%;
+      background-color: var(--color-coral);
+      color: var(--color-white);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(255, 127, 106, 0.35);
+      transition: var(--transition-spring);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-calculate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 127, 106, 0.45);
+      background-color: #ff6a52;
+    }
+    
+    .btn-calculate:active {
+      transform: translateY(1px);
+      box-shadow: 0 3px 10px rgba(255, 127, 106, 0.25);
+    }
+    
+    /* Beautiful Results Cards */
+    .results-container {
+      margin-top: 24px;
+      display: none;
+      animation: slideUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .results-card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 1.5px solid rgba(214, 165, 111, 0.3); /* Soft Gold border */
+      box-shadow: 0 12px 30px var(--color-shadow);
+      position: relative;
+    }
+    
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1.5px dashed var(--color-border);
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+    }
+    
+    .results-header-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      color: var(--color-espresso);
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .badge-profitable {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 50px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    /* Badge variations */
+    .badge-profitable.green {
+      background-color: rgba(46, 204, 113, 0.15);
+      color: var(--color-green);
+    }
+    
+    .badge-profitable.yellow {
+      background-color: rgba(241, 196, 15, 0.15);
+      color: #d8ae0a;
+    }
+    
+    .badge-profitable.red {
+      background-color: rgba(231, 76, 60, 0.15);
+      color: var(--color-red);
+    }
+    
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(59, 37, 33, 0.05);
+    }
+    
+    .result-row:last-of-type {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    
+    .result-label {
+      font-size: 0.9rem;
+      color: var(--color-rose);
+      font-weight: 500;
+    }
+    
+    .result-value {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--color-espresso);
+    }
+    
+    .result-value.highlight {
+      color: var(--color-coral);
+      font-size: 1.4rem;
+    }
+    
+    /* Fixed Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: 76px;
+      background-color: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-top: 1px solid var(--color-border);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      z-index: 1000;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: var(--color-rose);
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      gap: 4px;
+      position: relative;
+      transition: var(--transition-smooth);
+    }
+    
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
+      transition: var(--transition-smooth);
+    }
+    
+    .nav-item.active {
+      color: var(--color-coral);
+    }
+    
+    .nav-item.active svg {
+      transform: translateY(-2px);
+      stroke-width: 2.6;
+    }
+    
+    /* Active indicator dot */
+    .nav-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: 12px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background-color: var(--color-coral);
+    }
+    
+    /* Floating WhatsApp Button */
+    .whatsapp-btn {
+      position: fixed;
+      bottom: 96px; /* Positioned nicely above the bottom nav */
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: var(--color-white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(37, 211, 102, 0.35);
+      z-index: 999;
+      cursor: pointer;
+      transition: var(--transition-spring);
+      text-decoration: none;
+      animation: pulseWhatsApp 2s infinite;
+    }
+    
+    .whatsapp-btn:hover {
+      transform: scale(1.1) rotate(10deg);
+      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.45);
+    }
+    
+    .whatsapp-btn:active {
+      transform: scale(0.95);
+    }
+    
+    .whatsapp-btn svg {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+    
+    @keyframes pulseWhatsApp {
+      0% {
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+      }
+    }
+    
+    /* Info Card Design */
+    .info-badge {
+      background-color: rgba(214, 165, 111, 0.08);
+      border: 1px dashed var(--color-gold);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .info-badge svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--color-gold);
+      stroke-width: 2;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    .info-badge p {
+      font-size: 0.8rem;
+      color: var(--color-espresso);
+      opacity: 0.85;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+    
+    <!-- Top Header -->
+    <header>
+      <div class="brand">
+        <!-- SVG Logo: Styled modern shipping box shape -->
+        <svg viewBox="0 0 32 32">
+          <defs>
+            <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FF9B8A"/>
+              <stop offset="100%" stop-color="#FF7F6A"/>
+            </linearGradient>
+          </defs>
+          <path d="M16 3 L28 9 L28 23 L16 29 L4 23 L4 9 Z" fill="url(#headerGrad)" />
+          <path d="M16 3 L28 9 L16 15 L4 9 Z" fill="#B67C8A" opacity="0.8" />
+          <path d="M4 9 L16 15 L16 29 L4 23 Z" fill="#D6A56F" opacity="0.6" />
+          <path d="M16 15 L28 9 L28 23 L16 29 Z" fill="#3B2521" opacity="0.15" />
+          <path d="M16 15 L16 29" stroke="#FFF7F1" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        <h1>Ship<span>Calc</span></h1>
+      </div>
+      <button class="pwa-install-btn" id="installBtn">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        Install
+      </button>
+    </header>
+
+    <!-- Main Screens -->
+    <main>
+      
+      <!-- SCREEN 1: SEA SHIPPING -->
+      <section id="sea-screen" class="screen active">
+        <div class="card">
+          <div class="card-title-group">
+            <h2 class="card-title">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+              </svg>
+              Sea Freight Calculator
+            </h2>
+            <p class="card-subtitle">Calculate cubic meters (CBM) and shipping rates</p>
+          </div>
+          
+          <form id="sea-form" novalidate>
+            <!-- Quantity Field -->
+            <div class="form-group">
+              <label for="sea-qty">Quantity</label>
+              <div class="input-wrapper">
+                <span class="input-icon">#</span>
+                <input type="number" id="sea-qty" class="form-control" placeholder="e.g. 50" min="1" required>
+              </div>
+              <span class="error-text" id="sea-qty-error">Please enter a valid quantity greater than 0</span>
+            </div>
+            
+            <!-- Dimensions (L x W x H — stacked full-width for readability) -->
+            <div class="form-group">
+              <label for="sea-len">Length</label>
+              <div class="input-wrapper dim-wrapper">
+                <input type="number" id="sea-len" class="form-control dim-control" placeholder="Enter length" min="0.1" step="any" required>
+                <select id="sea-len-unit" class="unit-selector">
+                  <option value="cm">cm</option>
+                  <option value="mm">mm</option>
+                </select>
+              </div>
+              <span class="error-text" id="sea-len-error">Please enter a valid length greater than 0</span>
+            </div>
+
+            <div class="form-group">
+              <label for="sea-wid">Width</label>
+              <div class="input-wrapper dim-wrapper">
+                <input type="number" id="sea-wid" class="form-control dim-control" placeholder="Enter width" min="0.1" step="any" required>
+                <select id="sea-wid-unit" class="unit-selector">
+                  <option value="cm">cm</option>
+                  <option value="mm">mm</option>
+                </select>
+              </div>
+              <span class="error-text" id="sea-wid-error">Please enter a valid width greater than 0</span>
+            </div>
+
+            <div class="form-group">
+              <label for="sea-hei">Height</label>
+              <div class="input-wrapper dim-wrapper">
+                <input type="number" id="sea-hei" class="form-control dim-control" placeholder="Enter height" min="0.1" step="any" required>
+                <select id="sea-hei-unit" class="unit-selector">
+                  <option value="cm">cm</option>
+                  <option value="mm">mm</option>
+                </select>
+              </div>
+              <span class="error-text" id="sea-hei-error">Please enter a valid height greater than 0</span>
+            </div>
+            
+            <!-- Shipping Rate Field -->
+            <div class="form-group">
+              <label for="sea-rate">Shipping Rate (₦ per CBM)</label>
+              <div class="input-wrapper">
+                <span class="input-icon">₦</span>
+                <input type="number" id="sea-rate" class="form-control" placeholder="e.g. 450,000" min="0.01" step="any" required>
+              </div>
+              <span class="error-text" id="sea-rate-error">Please enter a valid shipping rate</span>
+            </div>
+            
+            <button type="submit" class="btn-calculate">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M9 11h.01M12 14h.01M15 11h.01M15 7h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Calculate Sea Cost
+            </button>
+          </form>
+        </div>
+        
+        <!-- Sea Results -->
+        <div class="results-container" id="sea-results">
+          <div class="results-card">
+            <div class="results-header">
+              <h3 class="results-header-title">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Calculation Result
+              </h3>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Volume (CBM)</span>
+              <span class="result-value" id="sea-res-cbm">0.0000 m³</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Fee Per Item</span>
+              <span class="result-value" id="sea-res-fee-item">₦0.00</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Total Shipping Fee</span>
+              <span class="result-value highlight" id="sea-res-total">₦0.00</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 2: AIR SHIPPING -->
+      <section id="air-screen" class="screen">
+        <div class="card">
+          <div class="card-title-group">
+            <h2 class="card-title">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+              </svg>
+              Air Freight Calculator
+            </h2>
+            <p class="card-subtitle">Calculate air cargo costs with customs clearance</p>
+          </div>
+          
+          <form id="air-form" novalidate>
+            <div class="input-row">
+              <!-- Quantity Field -->
+              <div class="form-group" style="grid-column: span 1;">
+                <label for="air-qty">Quantity</label>
+                <div class="input-wrapper">
+                  <input type="number" id="air-qty" class="form-control" placeholder="e.g. 10" min="1" required>
+                </div>
+                <span class="error-text" id="air-qty-error">Invalid Qty</span>
+              </div>
+              
+              <!-- Weight Field -->
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="air-weight">Weight per Item (kg)</label>
+                <div class="input-wrapper">
+                  <input type="number" id="air-weight" class="form-control" placeholder="e.g. 1.5" min="0.01" step="any" required>
+                  <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-rose);">kg</span>
+                </div>
+                <span class="error-text" id="air-weight-error">Please enter weight greater than 0</span>
+              </div>
+            </div>
+            
+            <div class="input-row">
+              <!-- Shipping Rate ($) Field -->
+              <div class="form-group" style="grid-column: span 1.5;">
+                <label for="air-rate">Air Rate ($/kg)</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">$</span>
+                  <input type="number" id="air-rate" class="form-control" placeholder="e.g. 6.50" min="0.01" step="any" required>
+                </div>
+                <span class="error-text" id="air-rate-error">Invalid rate</span>
+              </div>
+              
+              <!-- Dollar rate in Naira -->
+              <div class="form-group" style="grid-column: span 1.5;">
+                <label for="air-dollar">Dollar Rate (₦/$)</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">₦</span>
+                  <input type="number" id="air-dollar" class="form-control" placeholder="e.g. 1500" min="1" step="any" required>
+                </div>
+                <span class="error-text" id="air-dollar-error">Invalid rate</span>
+              </div>
+            </div>
+            
+            <!-- Customs Clearance Field -->
+            <div class="form-group">
+              <label for="air-clearance">Custom Clearance Fee (₦)</label>
+              <div class="input-wrapper">
+                <span class="input-icon">₦</span>
+                <input type="number" id="air-clearance" class="form-control" placeholder="e.g. 25,000" min="0" step="any" required>
+              </div>
+              <span class="error-text" id="air-clearance-error">Please enter clearance fee (or 0)</span>
+            </div>
+            
+            <!-- Extra Fee Field -->
+            <div class="form-group">
+              <label for="air-extra">Extra Fee (₦, optional)</label>
+              <div class="input-wrapper">
+                <span class="input-icon">₦</span>
+                <input type="number" id="air-extra" class="form-control" placeholder="Defaults to 0" min="0" step="any">
+              </div>
+              <span class="error-text" id="air-extra-error">Please enter positive number</span>
+            </div>
+            
+            <button type="submit" class="btn-calculate">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M9 11h.01M12 14h.01M15 11h.01M15 7h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Calculate Air Cost
+            </button>
+          </form>
+        </div>
+        
+        <!-- Air Results -->
+        <div class="results-container" id="air-results">
+          <div class="results-card">
+            <div class="results-header">
+              <h3 class="results-header-title">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Calculation Result
+              </h3>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Total Weight</span>
+              <span class="result-value" id="air-res-weight">0.00 kg</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Shipping Cost ($)</span>
+              <span class="result-value" id="air-res-cost-usd">$0.00</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Shipping Cost (₦)</span>
+              <span class="result-value" id="air-res-cost-ngn">₦0.00</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Total Shipping Fee</span>
+              <span class="result-value highlight" id="air-res-total">₦0.00</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SCREEN 3: PROFIT & PRICING -->
+      <section id="profit-screen" class="screen">
+        <div class="card">
+          <div class="card-title-group">
+            <h2 class="card-title">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+              Profit & Margins Calculator
+            </h2>
+            <p class="card-subtitle">Evaluate unit profit and commercial feasibility</p>
+          </div>
+          
+          <div class="info-badge">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p>Ensure that all input cost metrics are formulated on a **per-item** basis for precision calculations.</p>
+          </div>
+          
+          <form id="profit-form" novalidate>
+            <div class="input-row">
+              <!-- Item Cost (₦) -->
+              <div class="form-group" style="grid-column: span 1.5;">
+                <label for="profit-item-cost">Item Cost (₦)</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">₦</span>
+                  <input type="number" id="profit-item-cost" class="form-control" placeholder="e.g. 5,000" min="0.01" step="any" required>
+                </div>
+                <span class="error-text" id="profit-item-cost-error">Invalid value</span>
+              </div>
+              
+              <!-- Shipping Fee (₦) -->
+              <div class="form-group" style="grid-column: span 1.5;">
+                <label for="profit-shipping">Shipping Fee (₦)</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">₦</span>
+                  <input type="number" id="profit-shipping" class="form-control" placeholder="e.g. 1,800" min="0.01" step="any" required>
+                </div>
+                <span class="error-text" id="profit-shipping-error">Invalid value</span>
+              </div>
+            </div>
+            
+            <div class="input-row">
+              <!-- Extra Fee (₦, optional) -->
+              <div class="form-group" style="grid-column: span 1.5;">
+                <label for="profit-extra">Extra Fee (₦)</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">₦</span>
+                  <input type="number" id="profit-extra" class="form-control" placeholder="Defaults to 0" min="0" step="any">
+                </div>
+                <span class="error-text" id="profit-extra-error">Positive only</span>
+              </div>
+              
+              <!-- Quantity -->
+              <div class="form-group" style="grid-column: span 1.5;">
+                <label for="profit-qty">Quantity</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">#</span>
+                  <input type="number" id="profit-qty" class="form-control" placeholder="e.g. 100" min="1" required>
+                </div>
+                <span class="error-text" id="profit-qty-error">Invalid value</span>
+              </div>
+            </div>
+            
+            <div class="input-row">
+              <!-- Selling Price (₦) -->
+              <div class="form-group" style="grid-column: span 1.5;">
+                <label for="profit-selling">Selling Price (₦)</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">₦</span>
+                  <input type="number" id="profit-selling" class="form-control" placeholder="e.g. 12,000" min="0.01" step="any" required>
+                </div>
+                <span class="error-text" id="profit-selling-error">Invalid value</span>
+              </div>
+              
+              <!-- Market Price (₦) -->
+              <div class="form-group" style="grid-column: span 1.5;">
+                <label for="profit-market">Market Price (₦)</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">₦</span>
+                  <input type="number" id="profit-market" class="form-control" placeholder="e.g. 15,000" min="0.01" step="any" required>
+                </div>
+                <span class="error-text" id="profit-market-error">Invalid value</span>
+              </div>
+            </div>
+            
+            <button type="submit" class="btn-calculate">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M9 11h.01M12 14h.01M15 11h.01M15 7h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              Analyze Profitability
+            </button>
+          </form>
+        </div>
+        
+        <!-- Profit Results -->
+        <div class="results-container" id="profit-results">
+          <div class="results-card">
+            <div class="results-header">
+              <h3 class="results-header-title">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Commercial Analysis
+              </h3>
+              <!-- Profitability Badge Status -->
+              <div class="badge-profitable green" id="profit-badge">
+                <span id="profit-badge-icon">✅</span>
+                <span id="profit-badge-text">Profitable</span>
+              </div>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Total Cost Per Item</span>
+              <span class="result-value" id="profit-res-cost">₦0.00</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Profit @ Market Price</span>
+              <span class="result-value" id="profit-res-market">₦0.00</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Profit @ Selling Price</span>
+              <span class="result-value" id="profit-res-selling">₦0.00</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">Total Profit (All Units)</span>
+              <span class="result-value highlight" id="profit-res-total">₦0.00</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/2349165459826" class="whatsapp-btn" target="_blank" aria-label="Contact support on WhatsApp">
+      <!-- WhatsApp Brand SVG -->
+      <svg viewBox="0 0 24 24">
+        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.963C16.59 2.017 14.113 1.01 11.487 1.01c-5.441 0-9.866 4.372-9.87 9.802 0 1.706.463 3.37 1.34 4.838l-.946 3.456 3.636-.953zM18.06 14.9c-.31-.155-1.83-.9-2.112-1.002-.28-.102-.486-.153-.69.154-.205.307-.795.998-.974 1.203-.178.205-.357.23-.667.077-.31-.155-1.31-.484-2.496-1.543-.923-.824-1.547-1.842-1.728-2.15-.18-.307-.02-.473.136-.627.14-.14.31-.36.464-.537.155-.178.207-.307.31-.513.102-.205.05-.384-.025-.537-.077-.154-.69-1.66-.945-2.27-.248-.598-.5-.517-.69-.527-.178-.008-.383-.01-.588-.01-.205 0-.537.077-.82.384-.282.307-1.077 1.05-1.077 2.56 0 1.513 1.1 2.974 1.254 3.18.154.205 2.163 3.3 5.242 4.63.732.316 1.303.504 1.75.646.736.233 1.406.2 1.936.12.59-.09 1.83-.747 2.086-1.47.256-.724.256-1.343.18-1.47-.076-.128-.28-.205-.59-.36z"/>
+      </svg>
+    </a>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" onclick="switchScreen('sea-screen', this)">
+        <!-- Sea Nav: Ship SVG -->
+        <svg viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+        <span>Sea Freight</span>
+      </button>
+      
+      <button class="nav-item" onclick="switchScreen('air-screen', this)">
+        <!-- Air Nav: Plane SVG -->
+        <svg viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+        </svg>
+        <span>Air Freight</span>
+      </button>
+      
+      <button class="nav-item" onclick="switchScreen('profit-screen', this)">
+        <!-- Profit Nav: Bar Chart SVG -->
+        <svg viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <span>Profit</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <script>
+    // --- Screen Navigation Logic ---
+    function switchScreen(screenId, navElement) {
+      // Hide all screens
+      const screens = document.querySelectorAll('.screen');
+      screens.forEach(screen => {
+        screen.classList.remove('active');
+      });
+      
+      // Show active screen
+      const activeScreen = document.getElementById(screenId);
+      if (activeScreen) {
+        activeScreen.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      
+      // Update active nav button state
+      const navItems = document.querySelectorAll('.nav-item');
+      navItems.forEach(item => {
+        item.classList.remove('active');
+      });
+      navElement.classList.add('active');
+      
+      // Haptic feedback (subtle vibration if supported)
+      if (navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    }
+
+    // --- Currency and Number Formatter Helpers ---
+    const formatCurrencyNGN = (value) => {
+      return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency: 'NGN',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value).replace('NGN', '₦');
+    };
+
+    const formatCurrencyUSD = (value) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(value);
+    };
+
+    const formatDecimal = (value, decimalPlaces = 2) => {
+      return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces
+      }).format(value);
+    };
+
+    // --- Dynamic Form Input Validation ---
+    function validateField(inputEl, errorEl, customValidationFn) {
+      const val = parseFloat(inputEl.value);
+      const wrapper = inputEl.closest('.input-wrapper');
+      
+      let isValid = true;
+      
+      if (inputEl.hasAttribute('required')) {
+        if (inputEl.value.trim() === '' || isNaN(val)) {
+          isValid = false;
+        }
+      }
+      
+      if (isValid && !isNaN(val)) {
+        if (inputEl.min !== '' && val < parseFloat(inputEl.min)) {
+          isValid = false;
+        }
+        if (customValidationFn && !customValidationFn(val)) {
+          isValid = false;
+        }
+      }
+      
+      if (!isValid) {
+        wrapper.classList.add('error');
+        errorEl.style.display = 'block';
+      } else {
+        wrapper.classList.remove('error');
+        errorEl.style.display = 'none';
+      }
+      
+      return isValid;
+    }
+
+    // Add real-time validation cleanup on input typing
+    document.querySelectorAll('.form-control').forEach(input => {
+      input.addEventListener('input', () => {
+        const wrapper = input.closest('.input-wrapper');
+        const errorEl = input.closest('.form-group').querySelector('.error-text');
+        wrapper.classList.remove('error');
+        if (errorEl) errorEl.style.display = 'none';
+      });
+    });
+
+    // --- Screen 1: Sea Shipping Logic ---
+    const seaForm = document.getElementById('sea-form');
+    seaForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      
+      const qtyEl = document.getElementById('sea-qty');
+      const lenEl = document.getElementById('sea-len');
+      const widEl = document.getElementById('sea-wid');
+      const heiEl = document.getElementById('sea-hei');
+      const rateEl = document.getElementById('sea-rate');
+      
+      const isQtyValid = validateField(qtyEl, document.getElementById('sea-qty-error'), val => Number.isInteger(val));
+      const isLenValid = validateField(lenEl, document.getElementById('sea-len-error'));
+      const isWidValid = validateField(widEl, document.getElementById('sea-wid-error'));
+      const isHeiValid = validateField(heiEl, document.getElementById('sea-hei-error'));
+      const isRateValid = validateField(rateEl, document.getElementById('sea-rate-error'));
+      
+      if (!isQtyValid || !isLenValid || !isWidValid || !isHeiValid || !isRateValid) {
+        if (navigator.vibrate) navigator.vibrate([50, 50]);
+        // Focus first invalid element
+        const firstError = document.querySelector('.screen.active .input-wrapper.error .form-control');
+        if (firstError) firstError.focus();
+        return;
+      }
+      
+      // Inputs
+      const qty = parseInt(qtyEl.value);
+      let len = parseFloat(lenEl.value);
+      let wid = parseFloat(widEl.value);
+      let hei = parseFloat(heiEl.value);
+      const rate = parseFloat(rateEl.value);
+      
+      // Metric Convert to CM if unit is mm
+      if (document.getElementById('sea-len-unit').value === 'mm') len /= 10;
+      if (document.getElementById('sea-wid-unit').value === 'mm') wid /= 10;
+      if (document.getElementById('sea-hei-unit').value === 'mm') hei /= 10;
+      
+      // Formulas
+      const volume = len * wid * hei; // Volume in cm3
+      const cbm = volume / 1000000;
+      const feePerItem = cbm * rate;
+      const totalFee = feePerItem * qty;
+      
+      // Render Results
+      document.getElementById('sea-res-cbm').textContent = `${formatDecimal(cbm, 6)} m³`;
+      document.getElementById('sea-res-fee-item').textContent = formatCurrencyNGN(feePerItem);
+      document.getElementById('sea-res-total').textContent = formatCurrencyNGN(totalFee);
+      
+      // Animate slide-up of results card
+      const resultsContainer = document.getElementById('sea-results');
+      resultsContainer.style.display = 'block';
+      resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    // --- Screen 2: Air Shipping Logic ---
+    const airForm = document.getElementById('air-form');
+    airForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      
+      const qtyEl = document.getElementById('air-qty');
+      const weightEl = document.getElementById('air-weight');
+      const rateEl = document.getElementById('air-rate');
+      const dollarEl = document.getElementById('air-dollar');
+      const clearanceEl = document.getElementById('air-clearance');
+      const extraEl = document.getElementById('air-extra');
+      
+      const isQtyValid = validateField(qtyEl, document.getElementById('air-qty-error'), val => Number.isInteger(val));
+      const isWeightValid = validateField(weightEl, document.getElementById('air-weight-error'));
+      const isRateValid = validateField(rateEl, document.getElementById('air-rate-error'));
+      const isDollarValid = validateField(dollarEl, document.getElementById('air-dollar-error'));
+      const isClearanceValid = validateField(clearanceEl, document.getElementById('air-clearance-error'));
+      
+      // Extra fee is optional, validate only if populated
+      let isExtraValid = true;
+      if (extraEl.value.trim() !== '') {
+        isExtraValid = validateField(extraEl, document.getElementById('air-extra-error'));
+      }
+      
+      if (!isQtyValid || !isWeightValid || !isRateValid || !isDollarValid || !isClearanceValid || !isExtraValid) {
+        if (navigator.vibrate) navigator.vibrate([50, 50]);
+        const firstError = document.querySelector('.screen.active .input-wrapper.error .form-control');
+        if (firstError) firstError.focus();
+        return;
+      }
+      
+      // Inputs
+      const qty = parseInt(qtyEl.value);
+      const weight = parseFloat(weightEl.value);
+      const rate = parseFloat(rateEl.value);
+      const dollarRate = parseFloat(dollarEl.value);
+      const clearance = parseFloat(clearanceEl.value);
+      const extra = extraEl.value.trim() !== '' ? parseFloat(extraEl.value) : 0;
+      
+      // Formulas
+      const totalWeight = qty * weight;
+      const costUSD = totalWeight * rate;
+      const costNGN = costUSD * dollarRate;
+      const totalFee = costNGN + clearance + extra;
+      
+      // Render Results
+      document.getElementById('air-res-weight').textContent = `${formatDecimal(totalWeight, 2)} kg`;
+      document.getElementById('air-res-cost-usd').textContent = formatCurrencyUSD(costUSD);
+      document.getElementById('air-res-cost-ngn').textContent = formatCurrencyNGN(costNGN);
+      document.getElementById('air-res-total').textContent = formatCurrencyNGN(totalFee);
+      
+      const resultsContainer = document.getElementById('air-results');
+      resultsContainer.style.display = 'block';
+      resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    // --- Screen 3: Profit & Pricing Logic ---
+    const profitForm = document.getElementById('profit-form');
+    profitForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      
+      const itemCostEl = document.getElementById('profit-item-cost');
+      const shippingEl = document.getElementById('profit-shipping');
+      const extraEl = document.getElementById('profit-extra');
+      const qtyEl = document.getElementById('profit-qty');
+      const sellingEl = document.getElementById('profit-selling');
+      const marketEl = document.getElementById('profit-market');
+      
+      const isItemCostValid = validateField(itemCostEl, document.getElementById('profit-item-cost-error'));
+      const isShippingValid = validateField(shippingEl, document.getElementById('profit-shipping-error'));
+      const isQtyValid = validateField(qtyEl, document.getElementById('profit-qty-error'), val => Number.isInteger(val));
+      const isSellingValid = validateField(sellingEl, document.getElementById('profit-selling-error'));
+      const isMarketValid = validateField(marketEl, document.getElementById('profit-market-error'));
+      
+      let isExtraValid = true;
+      if (extraEl.value.trim() !== '') {
+        isExtraValid = validateField(extraEl, document.getElementById('profit-extra-error'));
+      }
+      
+      if (!isItemCostValid || !isShippingValid || !isQtyValid || !isSellingValid || !isMarketValid || !isExtraValid) {
+        if (navigator.vibrate) navigator.vibrate([50, 50]);
+        const firstError = document.querySelector('.screen.active .input-wrapper.error .form-control');
+        if (firstError) firstError.focus();
+        return;
+      }
+      
+      // Inputs
+      const itemCost = parseFloat(itemCostEl.value);
+      const shipping = parseFloat(shippingEl.value);
+      const extra = extraEl.value.trim() !== '' ? parseFloat(extraEl.value) : 0;
+      const qty = parseInt(qtyEl.value);
+      const sellingPrice = parseFloat(sellingEl.value);
+      const marketPrice = parseFloat(marketEl.value);
+      
+      // Formulas
+      const totalCost = itemCost + shipping + extra;
+      const profitMarket = marketPrice - totalCost;
+      const profitSelling = sellingPrice - totalCost;
+      const totalProfit = profitSelling * qty;
+      
+      // Render Results
+      document.getElementById('profit-res-cost').textContent = formatCurrencyNGN(totalCost);
+      document.getElementById('profit-res-market').textContent = formatCurrencyNGN(profitMarket);
+      document.getElementById('profit-res-selling').textContent = formatCurrencyNGN(profitSelling);
+      document.getElementById('profit-res-total').textContent = formatCurrencyNGN(totalProfit);
+      
+      // Profitability Badge Status Check
+      const badgeEl = document.getElementById('profit-badge');
+      const badgeIconEl = document.getElementById('profit-badge-icon');
+      const badgeTextEl = document.getElementById('profit-badge-text');
+      
+      badgeEl.className = 'badge-profitable'; // Clear previous states
+      
+      // Logic:
+      // If Total Cost < Market Price by 25–50% = Profitable ✅
+      // If less than 25% margin = Tight ⚠️
+      // If no margin = Not profitable ❌
+      
+      const costRatio = totalCost / marketPrice;
+      const marginPercent = (1 - costRatio) * 100;
+      
+      if (totalCost >= marketPrice) {
+        // No margin or negative profit
+        badgeEl.classList.add('red');
+        badgeIconEl.textContent = '❌';
+        badgeTextEl.textContent = 'Not profitable';
+      } else if (marginPercent < 25.0) {
+        // Less than 25% margin
+        badgeEl.classList.add('yellow');
+        badgeIconEl.textContent = '⚠️';
+        badgeTextEl.textContent = 'Margin tight';
+      } else {
+        // 25% or more margin (i.e. cost is at least 25% less than market price)
+        badgeEl.classList.add('green');
+        badgeIconEl.textContent = '✅';
+        badgeTextEl.textContent = 'Profitable';
+      }
+      
+      const resultsContainer = document.getElementById('profit-results');
+      resultsContainer.style.display = 'block';
+      resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+
+    // --- PWA Service Worker Registration & Install Button Controller ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('ServiceWorker registered with scope: ', reg.scope))
+          .catch(err => console.error('ServiceWorker registration failed: ', err));
+      });
+    }
+
+    // Install Button PWA Handler
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      deferredPrompt = e;
+      // Update UI to notify user that the app can be installed
+      installBtn.style.display = 'flex';
+    });
+
+    installBtn.addEventListener('click', () => {
+      if (!deferredPrompt) return;
+      // Show the installation prompt
+      deferredPrompt.prompt();
+      // Wait for the user to respond to the prompt
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+        } else {
+          console.log('User dismissed the install prompt');
+        }
+        deferredPrompt = null;
+        installBtn.style.display = 'none';
+      });
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('ShipCalc PWA was successfully installed!');
+      installBtn.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
